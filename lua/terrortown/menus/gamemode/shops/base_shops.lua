@@ -13,6 +13,39 @@ local MODE_INHERIT_ADDED = ShopEditor.MODE_INHERIT_ADDED
 CLGAMEMODESUBMENU.priority = 0
 CLGAMEMODESUBMENU.title = ""
 
+local base = nil
+
+local function createShopCards(form, sortedEquipmentList, roleIndex)
+	-- Create toggelable cards to create a custom shop
+
+	if not base then
+		base = form:MakeIconLayout()
+	end
+
+	base:Clear()
+
+	for i = 1, #sortedEquipmentList do
+        local item = sortedEquipmentList[i]
+
+        form:MakeShopCard({
+            label = item.shopTitle,
+            icon = item.iconMaterial,
+            initial = item.CanBuy[roleIndex] and MODE_ADDED or MODE_DEFAULT, -- todo: this should be the current mode
+            OnChange = function(_, _, newMode)
+                local isAdded = newMode == MODE_ADDED or newMode == MODE_INHERIT_ADDED
+
+                item.CanBuy[roleIndex] = isAdded and roleIndex or nil
+
+                net.Start("shop")
+                net.WriteBool(isAdded)
+                net.WriteUInt(roleIndex, ROLE_BITS)
+                net.WriteString(item.id)
+                net.SendToServer()
+            end,
+        }, base)
+    end
+end
+
 function CLGAMEMODESUBMENU:Populate(parent)
     local myRoleName = self.roleData.name
     local roleIndex = self.roleData.index
@@ -107,27 +140,25 @@ function CLGAMEMODESUBMENU:Populate(parent)
         ShopEditor.sortedEquipmentList[GetActiveLanguageName] = sortedEquipmentList
     end
 
-    -- Create toggelable cards to create a custom shop
-    local base = form:MakeIconLayout()
+	local searchBarLeft,searchBarRight = form:MakeTextEntry({
+		label="searchbar_default_placeholder",
+		OnChange=function(self,value)
+			local searchTerm = string.lower(value)
+			local filteredList = {}
+			for i = 1, #sortedEquipmentList do
+				local item = sortedEquipmentList[i]
 
-    for i = 1, #sortedEquipmentList do
-        local item = sortedEquipmentList[i]
+				if string.find(string.lower(item.shopTitle),searchTerm) then
+					table.insert(filteredList,item)
+				end
+			end
+			createShopCards(form, filteredList, roleIndex)
+		end,
+	})
 
-        form:MakeShopCard({
-            label = item.shopTitle,
-            icon = item.iconMaterial,
-            initial = item.CanBuy[roleIndex] and MODE_ADDED or MODE_DEFAULT, -- todo: this should be the current mode
-            OnChange = function(_, _, newMode)
-                local isAdded = newMode == MODE_ADDED or newMode == MODE_INHERIT_ADDED
+	searchBarRight:SetUpdateOnType(true)
 
-                item.CanBuy[roleIndex] = isAdded and roleIndex or nil
+	base = form:MakeIconLayout()
 
-                net.Start("shop")
-                net.WriteBool(isAdded)
-                net.WriteUInt(roleIndex, ROLE_BITS)
-                net.WriteString(item.id)
-                net.SendToServer()
-            end,
-        }, base)
-    end
+    createShopCards(form,  sortedEquipmentList, roleIndex)
 end
