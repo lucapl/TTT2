@@ -109,7 +109,7 @@ function CLGAMEMODESUBMENU:Populate(parent)
         return
     end
 
-    local sortedEquipmentList = ShopEditor.sortedEquipmentList[GetActiveLanguageName] or {}
+    local sortedEquipmentList = ShopEditor.sortedEquipmentList[GetActiveLanguageName()] or {}
 
     -- If there is no language specific sorted equipment list, create one
     if IsEmpty(sortedEquipmentList) then
@@ -137,11 +137,10 @@ function CLGAMEMODESUBMENU:Populate(parent)
         SortByMember(sortedEquipmentList, "shopTitle", true)
 
         -- Save the translated and sorted list
-        ShopEditor.sortedEquipmentList[GetActiveLanguageName] = sortedEquipmentList
+        ShopEditor.sortedEquipmentList[GetActiveLanguageName()] = sortedEquipmentList
     end
 
-	local searchBarLeft,searchBarRight = form:MakeTextEntry({
-		label="searchbar_default_placeholder",
+	local searchBar = form:MakeSearchBar({
 		OnChange=function(self,value)
 			local searchTerm = string.lower(value)
 			local filteredList = {}
@@ -155,8 +154,6 @@ function CLGAMEMODESUBMENU:Populate(parent)
 			createShopCards(form, filteredList, roleIndex)
 		end,
 	})
-
-	searchBarRight:SetUpdateOnType(true)
 
 	base = form:MakeIconLayout()
 

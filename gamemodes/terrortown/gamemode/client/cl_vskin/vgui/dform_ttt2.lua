@@ -265,6 +265,29 @@ function PANEL:MakeTextEntry(data)
     return left, right
 end
 
+function PANEL:MakeSearchBar(data)
+	local searchBar = vgui.Create("DSearchBarTTT2", self)
+
+	searchBar.OnGetFocus = function(slf)
+        util.getHighestPanelParent(self):SetKeyboardInputEnabled(true)
+    end
+
+    searchBar.OnLoseFocus = function(slf)
+        util.getHighestPanelParent(self):SetKeyboardInputEnabled(false)
+    end
+
+	searchBar:SetUpdateOnType(true)
+
+	searchBar.OnValueChange = function(slf, value)
+		print(value)
+        if isfunction(data.OnChange) then
+            data.OnChange(slf, value)
+        end
+    end
+	
+	self:AddItem(searchBar, nil)
+end
+
 ---
 -- Adds a checkbox to the form
 -- @param table data The data for the checkbox
